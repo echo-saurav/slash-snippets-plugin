@@ -49,7 +49,6 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 	}
 
 	getSuggestions(context: EditorSuggestContext): TFile[] | Promise<TFile[]> {
-		console.log(context.query);
 		return this.getAllSnippets(context.query)
 	}
 
