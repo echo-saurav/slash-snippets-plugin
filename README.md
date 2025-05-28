@@ -11,9 +11,7 @@ Use it for things like Dataview blocks, callouts, templates, or any reusable tex
 - Choose a trigger character — by default, it’s / (slash).
 - Set the folder path where you’ve saved your text snippets.
 
-![image](./assets/setting-image.png)
-
-
+![image](./assets/settings-image.png)
 
 
 
