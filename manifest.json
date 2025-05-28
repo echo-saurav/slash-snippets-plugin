@@ -6,6 +6,5 @@
 	"description": "Use slash command to insert quick text",
 	"author": "echo-saurav",
 	"authorUrl": "https://github.com/echo-saurav",
-	"fundingUrl": "https://github.com/echo-saurav/slash-snippets-plugin",
 	"isDesktopOnly": false
 }
