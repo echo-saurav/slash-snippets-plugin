@@ -5,7 +5,7 @@ Quickly insert your most-used text snippets while writing in Obsidian.
 Use it for things like Dataview blocks, callouts, templates, or any reusable text.
 
 
-![video](./assets/demo-video.mov)
+![video](./assets/demo-video-720.mov)
 
 ## Setup
 - Choose a trigger character — by default, it’s / (slash).
