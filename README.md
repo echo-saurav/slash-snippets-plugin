@@ -1,14 +1,18 @@
 
 # Slash snippets 
-Insert any quick text while writing
+Quickly insert your most-used text snippets while writing in Obsidian.
 
-![gif](./assets/video-slash-snippet.gif)
+Use it for things like Dataview blocks, callouts, templates, or any reusable text.
+
+
+![video](./assets/demo-video.mov)
 
 ## Setup
-- Set a trigger character
-- Then a folder where you have put all your text snippets 
+- Choose a trigger character — by default, it’s / (slash).
+- Set the folder path where you’ve saved your text snippets.
 
 ![image](./assets/setting-image.png)
+
 
 
 
