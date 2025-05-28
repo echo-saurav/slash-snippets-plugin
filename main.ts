@@ -18,7 +18,7 @@ interface SlashSnippetSettings {
 
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
-	snippetPath: "/snippets",
+	snippetPath: "Snippets",
 };
 
 
