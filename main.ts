@@ -59,7 +59,7 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 	): EditorSuggestTriggerInfo | null {
 		const currentLine = editor.getLine(cursor.line).slice(0, cursor.ch);
 
-		if (!currentLine.startsWith("/")) {
+		if (!currentLine.startsWith(this.plugin.settings.slashTrigger)) {
 			return null;
 		}
 
