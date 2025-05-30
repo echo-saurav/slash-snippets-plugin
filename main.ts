@@ -116,9 +116,12 @@ export default class SlashSnippetPlugin extends Plugin {
 	public async runTemplaterReplace(){
 		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
 		const saveCommandId = "editor:save-file";
-		await this.app.commands?.executeCommandById(saveCommandId);
+		// await this.app.commands.executeCommandById(saveCommandId);
+		(await this.app as any).commands.executeCommandById(saveCommandId);
+
 		await this.delay(300);
-		await this.app.commands?.executeCommandById(templaterReplaceCommandId);
+		(await this.app as any).commands.executeCommandById(templaterReplaceCommandId);
+		// await this.app.commands.executeCommandById(templaterReplaceCommandId);
 	}
 	async delay(ms: number) {
 		return new Promise(resolve => setTimeout(resolve, ms));
