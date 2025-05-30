@@ -14,11 +14,13 @@ import {
 interface SlashSnippetSettings {
 	slashTrigger: string;
 	snippetPath: string;
+	templaterSupport: boolean;
 }
 
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
 	snippetPath: "Snippets",
+	templaterSupport: true
 };
 
 
@@ -72,16 +74,21 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 			end: cursor,
 			query: currentLine.slice(1,currentLine.length),
 		};
+		
 	}
 
 	public async selectSuggestion(result: TFile, evt: MouseEvent) {
 		const snippetContent = await this.plugin.app.vault.read(result);
 
-		this.context?.editor.replaceRange(
+		await this.context?.editor.replaceRange(
 			snippetContent,
 			this.context.start,
 			this.context.end
 		);
+
+		if(this.plugin.settings.templaterSupport){
+			await this.plugin.runTemplaterReplace();
+		}
 		this.close();
 	}
 
@@ -103,6 +110,18 @@ export default class SlashSnippetPlugin extends Plugin {
 		await this.loadSettings();
 		this.registerEditorSuggest(new SlashSuggestions(this));
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
+	}
+
+	
+	public async runTemplaterReplace(){
+		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
+		const saveCommandId = "editor:save-file";
+		await this.app.commands?.executeCommandById(saveCommandId);
+		await this.delay(300);
+		await this.app.commands?.executeCommandById(templaterReplaceCommandId);
+	}
+	async delay(ms: number) {
+		return new Promise(resolve => setTimeout(resolve, ms));
 	}
 
 	onunload() {}
@@ -160,5 +179,26 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		const templaterDesc = document.createDocumentFragment();
+		templaterDesc.append(
+			"Enable this if you want to use ",
+			templaterDesc.createEl("a",{
+				href:"https://github.com/SilentVoid13/Templater",
+				text: "Templater"
+			}),
+			" files inside snippets"
+		)
+		new Setting(containerEl)
+			.setName("Enable Templater plugin support")
+			.setDesc(templaterDesc)
+			.addToggle((enable)=>{
+				enable
+				.setValue(this.plugin.settings.templaterSupport)
+				.onChange(async (value)=>{
+					this.plugin.settings.templaterSupport = value;
+					await this.plugin.saveSettings();
+				})
+			});
 	}
 }
