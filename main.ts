@@ -14,12 +14,14 @@ import {
 interface SlashSnippetSettings {
 	slashTrigger: string;
 	snippetPath: string;
+	ignoreProperties: boolean;
 	templaterSupport: boolean;
 }
 
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
 	snippetPath: "Snippets",
+	ignoreProperties: true,
 	templaterSupport: true
 };
 
@@ -77,8 +79,20 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 		
 	}
 
+	private removeFrontmatter(content:string){
+		if(!this.plugin.settings.ignoreProperties){
+			return content;
+		}
+		if(content.startsWith("---")){
+			return content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+		}
+		return content;
+	}
+
 	public async selectSuggestion(result: TFile, evt: MouseEvent) {
-		const snippetContent = await this.plugin.app.vault.read(result);
+		const fileContent = await this.plugin.app.vault.cachedRead(result);
+		const snippetContent = this.removeFrontmatter(fileContent);
+
 
 		await this.context?.editor.replaceRange(
 			snippetContent,
@@ -116,12 +130,12 @@ export default class SlashSnippetPlugin extends Plugin {
 	public async runTemplaterReplace(){
 		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
 		const saveCommandId = "editor:save-file";
-		// await this.app.commands.executeCommandById(saveCommandId);
+
 		(await this.app as any).commands.executeCommandById(saveCommandId);
 
 		await this.delay(300);
 		(await this.app as any).commands.executeCommandById(templaterReplaceCommandId);
-		// await this.app.commands.executeCommandById(templaterReplaceCommandId);
+		
 	}
 	async delay(ms: number) {
 		return new Promise(resolve => setTimeout(resolve, ms));
@@ -182,6 +196,19 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		new Setting(containerEl)
+			.setName("Ignore properties")
+			.setDesc("Enable this if don't want to include properties values in the notes, its useful if you use text expansion with 'expension' value in properties")
+			.addToggle((enable)=>{
+				enable
+				.setValue(this.plugin.settings.ignoreProperties)
+				.onChange(async (value)=>{
+					this.plugin.settings.ignoreProperties = value;
+					await this.plugin.saveSettings();
+				})
+			});
+
 
 		const templaterDesc = document.createDocumentFragment();
 		templaterDesc.append(
