@@ -1,7 +1,7 @@
 {
 	"id": "slash-snippets",
 	"name": "Slash snippets",
-	"version": "1.0.9",
+	"version": "1.0.10",
 	"minAppVersion": "0.15.0",
 	"description": "Use slash command to insert quick text",
 	"author": "echo-saurav",
