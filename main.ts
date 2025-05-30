@@ -9,6 +9,7 @@ import {
 	EditorSuggest,
 	TFile,
 	EditorSuggestContext,
+	Notice,
 } from "obsidian";
 
 interface SlashSnippetSettings {
@@ -63,18 +64,19 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 	): EditorSuggestTriggerInfo | null {
 		const currentLine = editor.getLine(cursor.line).slice(0, cursor.ch);
 
-		if (!currentLine.startsWith(this.plugin.settings.slashTrigger)) {
+		if (!currentLine.contains(this.plugin.settings.slashTrigger)) {
 			return null;
 		}
 
+		const queryStart = currentLine.lastIndexOf(this.plugin.settings.slashTrigger);
+		const query = currentLine.slice(queryStart+1,currentLine.length);
 		return {
 			start: {
 				...cursor,
-				// Starting ch of the prompt + command group
-				ch: 0,
+				ch: queryStart,
 			},
 			end: cursor,
-			query: currentLine.slice(1,currentLine.length),
+			query: query
 		};
 		
 	}
@@ -179,8 +181,13 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 					.setPlaceholder("Slash trigger")
 					.setValue(this.plugin.settings.slashTrigger)
 					.onChange(async (value) => {
-						this.plugin.settings.slashTrigger = value;
-						await this.plugin.saveSettings();
+						if(value && value.length>1){
+							new Notice("Please use one character to avoid conflict");
+							text.setValue(value[0]);
+						}else{
+							this.plugin.settings.slashTrigger = value;
+							await this.plugin.saveSettings();
+						}
 					})
 			);
 
@@ -199,7 +206,7 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Ignore properties")
-			.setDesc("Enable this if don't want to include properties values in the notes, its useful if you use text expansion with 'expension' value in properties")
+			.setDesc("Enable this if you don't want to insert properties values in the snippets notes")
 			.addToggle((enable)=>{
 				enable
 				.setValue(this.plugin.settings.ignoreProperties)
@@ -217,7 +224,7 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 				href:"https://github.com/SilentVoid13/Templater",
 				text: "Templater"
 			}),
-			" files inside snippets"
+			" files inside snippets. (To use this, you need Templater plugin enabled)"
 		)
 		new Setting(containerEl)
 			.setName("Enable Templater plugin support")
