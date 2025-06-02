@@ -36,6 +36,9 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 	}
 
 	getAllSnippets(query:string){
+		if(query.startsWith(" ")){
+			return []
+		}
 
 		const files = this.app.vault.getMarkdownFiles();
 		const snippetFiles = [];
@@ -96,7 +99,7 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 		const snippetContent = this.removeFrontmatter(fileContent);
 
 
-		await this.context?.editor.replaceRange(
+		this.context?.editor.replaceRange(
 			snippetContent,
 			this.context.start,
 			this.context.end
@@ -133,12 +136,13 @@ export default class SlashSnippetPlugin extends Plugin {
 		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
 		const saveCommandId = "editor:save-file";
 
-		(await this.app as any).commands.executeCommandById(saveCommandId);
+		(this.app as any).commands.executeCommandById(saveCommandId);
 
 		await this.delay(300);
-		(await this.app as any).commands.executeCommandById(templaterReplaceCommandId);
+		(this.app as any).commands.executeCommandById(templaterReplaceCommandId);
 		
 	}
+
 	async delay(ms: number) {
 		return new Promise(resolve => setTimeout(resolve, ms));
 	}
