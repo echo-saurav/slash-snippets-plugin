@@ -17,7 +17,14 @@ Perfect for things like Dataview blocks, callouts, templates, or any reusable te
 
 ![image](./assets/settings-image.png)
 
-
+# How to install
+Currently its under review , you can install using [BRAT plugin](https://github.com/TfTHacker/obsidian42-brat) or manually  
+## Manual Installation
+Download `main.js` , `manifest.json` , `styles.css` the latest release from the [releases page](https://github.com/echo-saurav/slash-snippets-plugin/releases)
+create a folder name `slash-snippets-plugin` in `.obsidian/plugins`
+put all the file you downloaded in your vault's `.obsidian/plugins/slash-snippets-plugin/` directory
+Reload Obsidian
+Enable the plugin in Settings -> Community Plugins
 
 ## Here are some inspirations for snippets 
 
