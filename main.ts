@@ -9,7 +9,7 @@ import {
 	EditorSuggest,
 	TFile,
 	EditorSuggestContext,
-	Notice,
+	Notice, debounce,
 } from "obsidian";
 
 interface SlashSnippetSettings {
@@ -138,9 +138,12 @@ export default class SlashSnippetPlugin extends Plugin {
 
 		(this.app as any).commands.executeCommandById(saveCommandId);
 
-		await this.delay(300);
-		(this.app as any).commands.executeCommandById(templaterReplaceCommandId);
-		
+		const delayTemplateReplaceRun = debounce(()=>{
+			(this.app as any).commands.executeCommandById(templaterReplaceCommandId);
+		},300,true)
+
+		delayTemplateReplaceRun()
+
 	}
 
 	async delay(ms: number) {
