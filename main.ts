@@ -145,7 +145,7 @@ export default class SlashSnippetPlugin extends Plugin {
 		delayTemplateReplaceRun()
 
 	}
-	
+
 
 	onunload() {}
 
