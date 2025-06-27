@@ -218,16 +218,22 @@ _%>
 <%*_
 const content = tp.file.content
 
+let cleanContent = content.replace(/^-{3}[\s\S]*?-{3}\s*/gm, '');
+cleanContent = cleanContent.replace(/<%\*_[\s\S]*?_%\>/g, '');
+cleanContent = cleanContent.replace(/<%[\s\S]*?%\>/g, '');
+cleanContent = cleanContent.trim();
+
 const prompt = `
 Make a summery of the text bellow 
 ---
-${content}
+${cleanContent}
 --
 
 Only make summery dont make heading or anything else, your output will be inserted into a note , so write it as a note's summery sections. 
 `
 const summery = await tp.ai.chat(prompt)
 _%>
+<% tp.file.cursor() %>
 ## Summery
 <% summery.trim() %>
 ```
@@ -237,11 +243,15 @@ _%>
 ```
 <%*_
 const content = tp.file.content
+let cleanContent = content.replace(/^-{3}[\s\S]*?-{3}\s*/gm, '');
+cleanContent = cleanContent.replace(/<%\*_[\s\S]*?_%\>/g, '');
+cleanContent = cleanContent.replace(/<%[\s\S]*?%\>/g, '');
+cleanContent = cleanContent.trim();
 
 const prompt = `
 Read this notes bellow carefully and make markdown tasks list based on what the notes talking about doing or planning 
 ---
-${content}
+${cleanContent}
 --
 
 Only make tasks dont make heading or anything else, your output will be inserted into a note , so write it as a note's ## Todo's sections, so you dont have to write heading for todo's, Only markdown task 
@@ -250,6 +260,7 @@ ex:
 `
 const tasks = await tp.ai.chat(prompt)
 _%>
+<% tp.file.cursor() %>
 ## Todo's
 <% tasks %>
 
@@ -260,11 +271,16 @@ _%>
 ```
 <%*_
 const content = tp.file.content
+let cleanContent = content.replace(/^-{3}[\s\S]*?-{3}\s*/gm, '');
+cleanContent = cleanContent.replace(/<%\*_[\s\S]*?_%\>/g, '');
+cleanContent = cleanContent.replace(/<%[\s\S]*?%\>/g, '');
+cleanContent = cleanContent.trim();
+
 
 const prompt = `
 Read this notes bellow carefully and make top down mermaid flowchart based on what the notes talking about, include key points the note says
 ---
-${content}
+${cleanContent}
 --
 `
 const mermaidChart = await tp.ai.chat(prompt)
@@ -273,7 +289,34 @@ _%>
 <% mermaidChart %> 
 ```
 
+**Answer question about note**
 
+```
+<%*_
+const content = tp.file.content
+const userInput = await tp.system.prompt("What you want to write?")
+
+let cleanContent = content.replace(/^-{3}[\s\S]*?-{3}\s*/gm, '');
+cleanContent = cleanContent.replace(/<%\*_[\s\S]*?_%\>/g, '');
+cleanContent = cleanContent.replace(/<%[\s\S]*?%\>/g, '');
+cleanContent = cleanContent.trim();
+
+const prompt = `
+${userInput}
+Do this based on the note bellow , 
+---
+${cleanContent}
+--
+
+Do not add any yaml for notes, only do or asked as user said. keep it simple and short
+`
+const aiWrite = await tp.ai.chat(prompt)
+
+_%>
+<% tp.file.cursor() %>
+<% aiWrite %>
+
+```
 
 
 
