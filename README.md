@@ -40,13 +40,22 @@ Currently its under review , you can install using [BRAT plugin](https://github.
 > nice!
 ```
 
+**2 col table**
+```
+| 1   | 2   |
+| --- | --- |
+|     |     |
+
+```
+
+
 **3 col table**
 
 ```
-| one | two | three |
-| --- | --- | ----- |
-|     |     |       |
-|     |     |       |
+| 1   | 2   | 3   |
+| --- | --- | --- |
+|     |     |     |
+
 ```
 
 **4 col table**
@@ -78,7 +87,7 @@ flowchart LR
 ````
 
 
-> **Also you can mix with [templater](https://github.com/SilentVoid13/Templater)  code to make powerful snippets**
+## Also you can mix with [templater](https://github.com/SilentVoid13/Templater)  code to make powerful snippets**
 
 **Iframe**
 
@@ -98,6 +107,12 @@ today
 
 ```
 [[<%tp.date.now("YYYY-MM-DD")%>]] 
+```
+
+tomorrow
+
+```
+[[<% tp.date.now("YYYY-MM-DD" ,1) %>]] 
 ```
 
 yesterday
@@ -166,6 +181,97 @@ contains(file.inlinks ,[[<%tp.file.title%>]] )
 
 ```
 ````
+
+
+## AI Templates with [obsidian-ai-templater](https://github.com/TfTHacker/obsidian-ai-templater) plugin
+
+**Answer question about the note**
+```
+<%*_
+const content = tp.file.content
+const userInput = await tp.system.prompt("What you want to write?")
+
+let cleanContent = content.replace(/^-{3}[\s\S]*?-{3}\s*/gm, '');
+cleanContent = cleanContent.replace(/<%\*_[\s\S]*?_%\>/g, '');
+cleanContent = cleanContent.replace(/<%[\s\S]*?%\>/g, '');
+cleanContent = cleanContent.trim();
+
+const prompt = `
+${userInput}
+Do this based on the note bellow , 
+---
+${cleanContent}
+--
+
+Do not add any yaml for notes, only do or asked as user said. keep it simple and short
+`
+const aiWrite = await tp.ai.chat(prompt)
+
+_%>
+<% tp.file.cursor() %>
+<% aiWrite %> 
+```
+
+
+**Make summery of current note**
+```
+<%*_
+const content = tp.file.content
+
+const prompt = `
+Make a summery of the text bellow 
+---
+${content}
+--
+
+Only make summery dont make heading or anything else, your output will be inserted into a note , so write it as a note's summery sections. 
+`
+const summery = await tp.ai.chat(prompt)
+_%>
+## Summery
+<% summery.trim() %>
+```
+
+
+**Make tasks list for notes**
+```
+<%*_
+const content = tp.file.content
+
+const prompt = `
+Read this notes bellow carefully and make markdown tasks list based on what the notes talking about doing or planning 
+---
+${content}
+--
+
+Only make tasks dont make heading or anything else, your output will be inserted into a note , so write it as a note's ## Todo's sections, so you dont have to write heading for todo's, Only markdown task 
+ex: 
+- [ ] something 
+`
+const tasks = await tp.ai.chat(prompt)
+_%>
+## Todo's
+<% tasks %>
+
+```
+
+**Mermaid chart**
+
+```
+<%*_
+const content = tp.file.content
+
+const prompt = `
+Read this notes bellow carefully and make top down mermaid flowchart based on what the notes talking about, include key points the note says
+---
+${content}
+--
+`
+const mermaidChart = await tp.ai.chat(prompt)
+_%>
+<% tp.file.cursor() %>
+<% mermaidChart %> 
+```
 
 
 
