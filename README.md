@@ -1,5 +1,7 @@
 
 # Slash snippets 
+![total](https://img.shields.io/github/downloads/echo-saurav/slash-snippets-plugin/latest/total.svg)
+
 Quickly insert your most-used text snippets while writing in Obsidian.
 Perfect for things like Dataview blocks, callouts, templates, or any reusable text.
 
