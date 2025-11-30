@@ -27,16 +27,39 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 };
 
 
+
 class SlashSuggestions extends EditorSuggest<TFile> {
-	private plugin:SlashSnippetPlugin;
+	private plugin: SlashSnippetPlugin;
 
 	constructor(app: SlashSnippetPlugin) {
 		super(app.app);
 		this.plugin = app;
 	}
 
-	getAllSnippets(query:string){
-		if(query.startsWith(" ")){
+	fuzzyMatch(text: string, query: string) {
+		let t = 0, q = 0;
+		let positions: number[] = []
+		text = text.toLowerCase();
+		query = query.toLowerCase();
+
+
+		while (t < text.length && q < query.length) {
+			if (text[t] === query[q]) {
+				positions.push(t);
+				q++
+			}
+			if (text[t] === query[q]) q++;
+			t++;
+		}
+		if (q === query.length) {
+			return positions;
+		} else {
+			return false
+		}
+	}
+
+	getAllSnippets(query: string) {
+		if (query.startsWith(" ")) {
 			return []
 		}
 
@@ -45,9 +68,13 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 
 		for (let i = 0; i < files.length; i++) {
 			const file = files[i]
-			if(file.path.startsWith(this.plugin.settings.snippetPath)){
-				if(file.name.toLowerCase().contains(query.toLowerCase())){
-					snippetFiles.push(file)
+			if (file.path.startsWith(this.plugin.settings.snippetPath)) {
+				// if(file.name.toLowerCase().contains(query.toLowerCase())){
+				// 	snippetFiles.push(file)
+				// }
+				let positions = this.fuzzyMatch(file.name, query);
+				if (positions) {
+					snippetFiles.push(file);
 				}
 			}
 		}
@@ -72,7 +99,7 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 		}
 
 		const queryStart = currentLine.lastIndexOf(this.plugin.settings.slashTrigger);
-		const query = currentLine.slice(queryStart+1,currentLine.length);
+		const query = currentLine.slice(queryStart + 1, currentLine.length);
 		return {
 			start: {
 				...cursor,
@@ -81,14 +108,14 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 			end: cursor,
 			query: query
 		};
-		
+
 	}
 
-	private removeFrontmatter(content:string){
-		if(!this.plugin.settings.ignoreProperties){
+	private removeFrontmatter(content: string) {
+		if (!this.plugin.settings.ignoreProperties) {
 			return content;
 		}
-		if(content.startsWith("---")){
+		if (content.startsWith("---")) {
 			return content.replace(/^---\n[\s\S]*?\n---\n?/, '');
 		}
 		return content;
@@ -105,7 +132,7 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 			this.context.end
 		);
 
-		if(this.plugin.settings.templaterSupport){
+		if (this.plugin.settings.templaterSupport) {
 			await this.plugin.runTemplaterReplace();
 		}
 		this.close();
@@ -113,8 +140,8 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 
 	// Renders each suggestion item.
 	renderSuggestion(file: TFile, el: HTMLElement) {
-		el.createEl("div", { text:  file.basename});
-		el.createEl("small", { text: file.path });
+		el.createEl("div", {text: file.basename + " <b>" + file.basename + "</b>"});
+		el.createEl("small", {text: file.path});
 	}
 
 
@@ -131,23 +158,24 @@ export default class SlashSnippetPlugin extends Plugin {
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
 	}
 
-	
-	public async runTemplaterReplace(){
+
+	public async runTemplaterReplace() {
 		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
 		const saveCommandId = "editor:save-file";
 
 		(this.app as any).commands.executeCommandById(saveCommandId);
 
-		const delayTemplateReplaceRun = debounce(()=>{
+		const delayTemplateReplaceRun = debounce(() => {
 			(this.app as any).commands.executeCommandById(templaterReplaceCommandId);
-		},300,true)
+		}, 300, true)
 
 		delayTemplateReplaceRun()
 
 	}
 
 
-	onunload() {}
+	onunload() {
+	}
 
 	async loadSettings() {
 		this.settings = Object.assign(
@@ -171,7 +199,7 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		const { containerEl } = this;
+		const {containerEl} = this;
 
 		containerEl.empty();
 
@@ -185,10 +213,10 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 					.setPlaceholder("Slash trigger")
 					.setValue(this.plugin.settings.slashTrigger)
 					.onChange(async (value) => {
-						if(value && value.length>1){
+						if (value && value.length > 1) {
 							new Notice("Please use one character to avoid conflict");
 							text.setValue(value[0]);
-						}else{
+						} else {
 							this.plugin.settings.slashTrigger = value;
 							await this.plugin.saveSettings();
 						}
@@ -211,21 +239,21 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Ignore properties")
 			.setDesc("Enable this if you don't want to insert properties values in the snippets notes")
-			.addToggle((enable)=>{
+			.addToggle((enable) => {
 				enable
-				.setValue(this.plugin.settings.ignoreProperties)
-				.onChange(async (value)=>{
-					this.plugin.settings.ignoreProperties = value;
-					await this.plugin.saveSettings();
-				})
+					.setValue(this.plugin.settings.ignoreProperties)
+					.onChange(async (value) => {
+						this.plugin.settings.ignoreProperties = value;
+						await this.plugin.saveSettings();
+					})
 			});
 
 
 		const templaterDesc = document.createDocumentFragment();
 		templaterDesc.append(
 			"Enable this if you want to use ",
-			templaterDesc.createEl("a",{
-				href:"https://github.com/SilentVoid13/Templater",
+			templaterDesc.createEl("a", {
+				href: "https://github.com/SilentVoid13/Templater",
 				text: "Templater"
 			}),
 			" files inside snippets. (To use this, you need Templater plugin enabled)"
@@ -233,13 +261,13 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Enable Templater plugin support")
 			.setDesc(templaterDesc)
-			.addToggle((enable)=>{
+			.addToggle((enable) => {
 				enable
-				.setValue(this.plugin.settings.templaterSupport)
-				.onChange(async (value)=>{
-					this.plugin.settings.templaterSupport = value;
-					await this.plugin.saveSettings();
-				})
+					.setValue(this.plugin.settings.templaterSupport)
+					.onChange(async (value) => {
+						this.plugin.settings.templaterSupport = value;
+						await this.plugin.saveSettings();
+					})
 			});
 	}
 }
