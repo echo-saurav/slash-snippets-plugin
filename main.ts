@@ -14,6 +14,8 @@ import {
 
 interface SlashSnippetSettings {
 	slashTrigger: string;
+	fuzzySearch: boolean;
+	highlight: boolean;
 	snippetPath: string;
 	ignoreProperties: boolean;
 	templaterSupport: boolean;
@@ -26,6 +28,8 @@ interface SuggestionObject {
 
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
+	fuzzySearch: true,
+	highlight: true,
 	snippetPath: "Snippets",
 	ignoreProperties: true,
 	templaterSupport: true
@@ -49,14 +53,24 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 		while (t < text.length && q < query.length) {
 			if (text[t] === query[q]) {
-				positions.push(t);
 				q++
+				if (this.plugin.settings.highlight) {
+					positions.push(t);
+				}
 			}
 			if (text[t] === query[q]) q++;
 			t++;
 		}
+
+
 		if (q === query.length) {
-			return positions;
+			// return position if highlight enabled
+			if (this.plugin.settings.highlight) {
+				return positions;
+			}else {
+				return [];
+			}
+
 		} else {
 			return false
 		}
@@ -73,15 +87,23 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		for (let i = 0; i < files.length; i++) {
 			const file = files[i]
 			if (file.path.startsWith(this.plugin.settings.snippetPath)) {
-				// if(file.name.toLowerCase().contains(query.toLowerCase())){
-				// 	snippetFiles.push(file)
-				// }
-				let positions = this.fuzzyMatch(file.name, query);
-				if (positions) {
-					snippetFiles.push({
-						file: file,
-						positions: positions
-					});
+
+
+				if (this.plugin.settings.fuzzySearch) {
+					let positions = this.fuzzyMatch(file.name, query);
+					if (positions) {
+						snippetFiles.push({
+							file: file,
+							positions: positions
+						});
+					}
+				} else {
+					if (file.name.toLowerCase().contains(query.toLowerCase())) {
+						snippetFiles.push({
+							file: file,
+							positions: []
+						})
+					}
 				}
 			}
 		}
@@ -144,6 +166,7 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		}
 		this.close();
 	}
+
 	buildHighlighted(text: string, positions: number[]) {
 		let out = "";
 
@@ -161,12 +184,19 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	// Renders each suggestion item.
 	renderSuggestion(suggestion: SuggestionObject, el: HTMLElement) {
 		const name = suggestion.file.basename;
-		const pos  = suggestion.positions;
+		const pos = suggestion.positions;
 
-		const title = el.createEl("div");
-		title.innerHTML = this.buildHighlighted(name, pos);
 
-		el.createEl("small", { text: suggestion.file.path });
+		if (this.plugin.settings.highlight && pos) {
+			const title = el.createEl("div");
+			title.innerHTML = this.buildHighlighted(name, pos);
+			el.createEl("small", {text: suggestion.file.path});
+
+		} else {
+
+			el.createEl("div", {text: suggestion.file.basename});
+			el.createEl("small", {text: suggestion.file.path});
+		}
 	}
 
 
@@ -247,6 +277,33 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 						}
 					})
 			);
+
+		new Setting(containerEl)
+			.setName("Fuzzy Search")
+			.setDesc( "You don’t have to type the exact name." +
+				"If the letters appear in the right order, it will match." +
+				"Example: ‘btn’ → ‘Button’.")
+			.addToggle((enable) => {
+				enable
+					.setValue(this.plugin.settings.fuzzySearch)
+					.onChange(async (value) => {
+						this.plugin.settings.fuzzySearch = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+
+		new Setting(containerEl)
+			.setName("Highlight")
+			.setDesc( "Highlight matching terms of search results")
+			.addToggle((enable) => {
+				enable
+					.setValue(this.plugin.settings.highlight)
+					.onChange(async (value) => {
+						this.plugin.settings.highlight = value;
+						await this.plugin.saveSettings();
+					})
+			});
 
 		new Setting(containerEl)
 			.setName("Snippet path")
