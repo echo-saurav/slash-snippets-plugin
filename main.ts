@@ -17,6 +17,7 @@ interface SlashSnippetSettings {
 	fuzzySearch: boolean;
 	highlight: boolean;
 	showPath: boolean;
+	showFileContent: boolean;
 	snippetPath: string;
 	ignoreProperties: boolean;
 	templaterSupport: boolean;
@@ -32,6 +33,7 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	fuzzySearch: true,
 	highlight: true,
 	showPath: false,
+	showFileContent: false,
 	snippetPath: "Snippets",
 	ignoreProperties: true,
 	templaterSupport: true
@@ -174,7 +176,7 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 		for (let i = 0; i < text.length; i++) {
 			if (positions.includes(i)) {
-				out += `<b class="fuzzy_slash">${text[i]}</b>`;
+				out += `<b class="slash-fuzzy-match">${text[i]}</b>`;
 			} else {
 				out += text[i];
 			}
@@ -184,23 +186,29 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	}
 
 	// Renders each suggestion item.
-	renderSuggestion(suggestion: SuggestionObject, el: HTMLElement) {
+	async renderSuggestion(suggestion: SuggestionObject, el: HTMLElement) {
 		const name = suggestion.file.basename;
 		const pos = suggestion.positions;
 
-
+		// highlight match
 		if (this.plugin.settings.highlight && pos) {
 			const title = el.createEl("div");
 			title.innerHTML = this.buildHighlighted(name, pos);
-			if (this.plugin.settings.showPath) {
-				el.createEl("small", {text: suggestion.file.path});
-			}
 
 		} else {
 			el.createEl("div", {text: suggestion.file.basename});
-			if (this.plugin.settings.showPath) {
-				el.createEl("small", {text: suggestion.file.path});
-			}
+		}
+
+		// show path
+		if (this.plugin.settings.showPath) {
+			el.createEl("small", {cls: "slash-path", text: suggestion.file.path});
+		}
+
+		// show file content
+		if (this.plugin.settings.showFileContent) {
+			const fileContent = await this.plugin.app.vault.cachedRead(suggestion.file);
+			el.createDiv({cls: "slash-file"})
+				.createEl("small", {cls: "slash-file-content", text: fileContent.trim()});
 		}
 	}
 
@@ -316,6 +324,17 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.showPath)
 					.onChange(async (value) => {
 						this.plugin.settings.showPath = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+		new Setting(containerEl)
+			.setName("Show snippet content")
+			.addToggle((enable) => {
+				enable
+					.setValue(this.plugin.settings.showFileContent)
+					.onChange(async (value) => {
+						this.plugin.settings.showFileContent = value;
 						await this.plugin.saveSettings();
 					})
 			});
