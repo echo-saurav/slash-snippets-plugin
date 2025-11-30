@@ -94,7 +94,7 @@ flowchart LR
 **Iframe**
 
 ```
-<iframe src="<% tp.file.cursor() %>" height="400px" width="100%"></iframe>
+<iframe src="<% await tp.system.prompt("Ifram Url") %>" height="400px" width="100%"></iframe>
 ```
 
 **Markdown comment**
