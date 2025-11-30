@@ -19,6 +19,11 @@ interface SlashSnippetSettings {
 	templaterSupport: boolean;
 }
 
+interface SuggestionObject {
+	file: TFile;
+	positions: number[];
+}
+
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
 	snippetPath: "Snippets",
@@ -27,8 +32,7 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 };
 
 
-
-class SlashSuggestions extends EditorSuggest<TFile> {
+class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	private plugin: SlashSnippetPlugin;
 
 	constructor(app: SlashSnippetPlugin) {
@@ -64,7 +68,7 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 		}
 
 		const files = this.app.vault.getMarkdownFiles();
-		const snippetFiles = [];
+		const snippetFiles: SuggestionObject[] = [];
 
 		for (let i = 0; i < files.length; i++) {
 			const file = files[i]
@@ -74,7 +78,10 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 				// }
 				let positions = this.fuzzyMatch(file.name, query);
 				if (positions) {
-					snippetFiles.push(file);
+					snippetFiles.push({
+						file: file,
+						positions: positions
+					});
 				}
 			}
 		}
@@ -83,7 +90,7 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 
 	}
 
-	getSuggestions(context: EditorSuggestContext): TFile[] | Promise<TFile[]> {
+	getSuggestions(context: EditorSuggestContext): SuggestionObject[] | Promise<SuggestionObject[]> {
 		return this.getAllSnippets(context.query)
 	}
 
@@ -121,8 +128,8 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 		return content;
 	}
 
-	public async selectSuggestion(result: TFile, evt: MouseEvent) {
-		const fileContent = await this.plugin.app.vault.cachedRead(result);
+	public async selectSuggestion(result: SuggestionObject, evt: MouseEvent) {
+		const fileContent = await this.plugin.app.vault.cachedRead(result.file);
 		const snippetContent = this.removeFrontmatter(fileContent);
 
 
@@ -137,11 +144,29 @@ class SlashSuggestions extends EditorSuggest<TFile> {
 		}
 		this.close();
 	}
+	buildHighlighted(text: string, positions: number[]) {
+		let out = "";
+
+		for (let i = 0; i < text.length; i++) {
+			if (positions.includes(i)) {
+				out += `<b class="fuzzy_slash">${text[i]}</b>`;
+			} else {
+				out += text[i];
+			}
+		}
+
+		return out;
+	}
 
 	// Renders each suggestion item.
-	renderSuggestion(file: TFile, el: HTMLElement) {
-		el.createEl("div", {text: file.basename + " <b>" + file.basename + "</b>"});
-		el.createEl("small", {text: file.path});
+	renderSuggestion(suggestion: SuggestionObject, el: HTMLElement) {
+		const name = suggestion.file.basename;
+		const pos  = suggestion.positions;
+
+		const title = el.createEl("div");
+		title.innerHTML = this.buildHighlighted(name, pos);
+
+		el.createEl("small", { text: suggestion.file.path });
 	}
 
 
