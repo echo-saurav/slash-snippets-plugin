@@ -16,6 +16,7 @@ interface SlashSnippetSettings {
 	slashTrigger: string;
 	fuzzySearch: boolean;
 	highlight: boolean;
+	showPath: boolean;
 	snippetPath: string;
 	ignoreProperties: boolean;
 	templaterSupport: boolean;
@@ -30,6 +31,7 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
 	fuzzySearch: true,
 	highlight: true,
+	showPath: false,
 	snippetPath: "Snippets",
 	ignoreProperties: true,
 	templaterSupport: true
@@ -67,7 +69,7 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			// return position if highlight enabled
 			if (this.plugin.settings.highlight) {
 				return positions;
-			}else {
+			} else {
 				return [];
 			}
 
@@ -190,12 +192,15 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		if (this.plugin.settings.highlight && pos) {
 			const title = el.createEl("div");
 			title.innerHTML = this.buildHighlighted(name, pos);
-			el.createEl("small", {text: suggestion.file.path});
+			if (this.plugin.settings.showPath) {
+				el.createEl("small", {text: suggestion.file.path});
+			}
 
 		} else {
-
 			el.createEl("div", {text: suggestion.file.basename});
-			el.createEl("small", {text: suggestion.file.path});
+			if (this.plugin.settings.showPath) {
+				el.createEl("small", {text: suggestion.file.path});
+			}
 		}
 	}
 
@@ -280,7 +285,7 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Fuzzy Search")
-			.setDesc( "You don’t have to type the exact name." +
+			.setDesc("You don’t have to type the exact name." +
 				"If the letters appear in the right order, it will match." +
 				"Example: ‘btn’ → ‘Button’.")
 			.addToggle((enable) => {
@@ -295,7 +300,7 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Highlight")
-			.setDesc( "Highlight matching terms of search results")
+			.setDesc("Highlight matching terms of search results")
 			.addToggle((enable) => {
 				enable
 					.setValue(this.plugin.settings.highlight)
@@ -304,6 +309,17 @@ class SlashSnippetSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			});
+		new Setting(containerEl)
+			.setName("Show full path of the snippet file")
+			.addToggle((enable) => {
+				enable
+					.setValue(this.plugin.settings.showPath)
+					.onChange(async (value) => {
+						this.plugin.settings.showPath = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
 
 		new Setting(containerEl)
 			.setName("Snippet path")
