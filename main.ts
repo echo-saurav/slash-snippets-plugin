@@ -11,6 +11,7 @@ import {
 	EditorSuggestContext,
 	Notice, debounce,
 } from "obsidian";
+import {EditorView, ViewUpdate} from "@codemirror/view";
 
 interface SlashSnippetSettings {
 	slashTrigger: string;
@@ -156,8 +157,14 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 	public async selectSuggestion(result: SuggestionObject, evt: MouseEvent) {
 		const fileContent = await this.plugin.app.vault.cachedRead(result.file);
-		const snippetContent = this.removeFrontmatter(fileContent);
-
+		let snippetContent = this.removeFrontmatter(fileContent);
+		// replace with past text selection
+		if (this.plugin.selectedText) {
+			snippetContent = snippetContent.replace("$textSelection", this.plugin.selectedText);
+		} else {
+			snippetContent = snippetContent.replace("$textSelection", "");
+		}
+		this.plugin.selectedText = "";
 
 		this.context?.editor.replaceRange(
 			snippetContent,
@@ -219,11 +226,27 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 export default class SlashSnippetPlugin extends Plugin {
 	settings: SlashSnippetSettings;
+	selectedText: string;
 
 	async onload() {
 		await this.loadSettings();
 		this.registerEditorSuggest(new SlashSuggestions(this));
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
+
+		// keep text selection updated
+		const mySelectionListener = EditorView.updateListener.of((update: ViewUpdate) => {
+			if (update.selectionSet) {
+				const text = update.state.sliceDoc(
+					update.state.selection.main.from,
+					update.state.selection.main.to
+				);
+
+				if (text.length > 0) {
+					this.selectedText = text;
+				}
+			}
+		});
+		this.registerEditorExtension(mySelectionListener);
 	}
 
 
