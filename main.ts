@@ -27,6 +27,7 @@ interface SlashSnippetSettings {
 interface SuggestionObject {
 	file: TFile;
 	positions: number[];
+	score: number;
 }
 
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
@@ -90,25 +91,39 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 		for (let i = 0; i < this.plugin.snippetFiles.length; i++) {
 			const file = this.plugin.snippetFiles[i];
+			let score = 0;
 
 			if (this.plugin.settings.fuzzySearch) {
 				let positions = this.fuzzyMatch(file.name, query);
+				// if fuzzy math start with query then have higher score match
+				if (file.name.startsWith(query)) {
+					score = 5;
+				} else {
+					score = 1;
+				}
+
 				if (positions) {
 					snippetFiles.push({
 						file: file,
-						positions: positions
+						positions: positions,
+						score: score
 					});
 				}
+
 			} else {
 				if (file.name.toLowerCase().contains(query.toLowerCase())) {
+					score = 1;
 					snippetFiles.push({
 						file: file,
-						positions: []
+						positions: [],
+						score: score
 					})
+
 				}
 			}
 		}
 
+		snippetFiles.sort((a, b) => b.score - a.score);
 		return snippetFiles;
 
 	}
@@ -248,6 +263,7 @@ export default class SlashSnippetPlugin extends Plugin {
 		await this.loadSettings();
 		this.registerEditorSuggest(new SlashSuggestions(this));
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
+		this.loadAllTemplatedFiles();
 		this.listenForUpdates();
 
 		// keep text selection updated
@@ -266,22 +282,20 @@ export default class SlashSnippetPlugin extends Plugin {
 		this.registerEditorExtension(mySelectionListener);
 	}
 
+	loadAllTemplatedFiles() {
+		const files = this.app.vault.getMarkdownFiles();
+		const snippets = []
 
-	// loadAllTemplatedFiles() {
-	// 	const files = this.app.vault.getMarkdownFiles();
-	// 	console.log(files.length);
-	// 	const snippets = []
-	//
-	// 	for (let i = 0; i < files.length; i++) {
-	// 		const file = files[i];
-	//
-	// 		if (file.path.startsWith(this.settings.snippetPath)) {
-	// 			snippets.push(file)
-	// 		}
-	// 	}
-	// 	return snippets;
-	//
-	// }
+		for (let i = 0; i < files.length; i++) {
+			const file = files[i];
+
+			if (file.path.startsWith(`${this.settings.snippetPath}/`)) {
+				snippets.push(file)
+			}
+		}
+
+		this.snippetFiles = snippets;
+	}
 
 	listenForUpdates() {
 		this.registerEvent(this.app.vault.on('create', (file) => {
