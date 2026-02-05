@@ -197,6 +197,8 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		const name = suggestion.file.basename;
 		const pos = suggestion.positions;
 
+		const fileContent = await this.plugin.app.vault.cachedRead(suggestion.file);
+
 		// highlight match
 		if (this.plugin.settings.highlight && pos) {
 			const title = el.createEl("div");
@@ -213,10 +215,26 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 		// show file content
 		if (this.plugin.settings.showFileContent) {
-			const fileContent = await this.plugin.app.vault.cachedRead(suggestion.file);
+			// const fileContent = await this.plugin.app.vault.cachedRead(suggestion.file);
 			el.createDiv({cls: "slash-file"})
 				.createEl("small", {cls: "slash-file-content", text: fileContent.trim()});
 		}
+
+		if (fileContent.contains("$textSelection")) {
+			;
+			const maxLength = 20;
+			let insertText = ""
+
+			if (this.plugin.selectedText.length > maxLength) {
+				insertText = `${this.plugin.selectedText.substring(0, maxLength).trim()}...`;
+			} else {
+				insertText = this.plugin.selectedText.substring(0, 10).trim();
+			}
+
+			el.createEl('small', {text: insertText,cls: "insert_text"});
+		}
+
+
 	}
 
 

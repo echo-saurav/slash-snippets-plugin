@@ -14,3 +14,7 @@
 .slash-path {
 
 }
+
+.insert_text {
+	color: var(--text-muted);
+}
