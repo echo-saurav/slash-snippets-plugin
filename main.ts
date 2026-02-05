@@ -86,29 +86,25 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			return []
 		}
 
-		const files = this.app.vault.getMarkdownFiles();
 		const snippetFiles: SuggestionObject[] = [];
 
-		for (let i = 0; i < files.length; i++) {
-			const file = files[i]
-			if (file.path.startsWith(this.plugin.settings.snippetPath)) {
+		for (let i = 0; i < this.plugin.snippetFiles.length; i++) {
+			const file = this.plugin.snippetFiles[i];
 
-
-				if (this.plugin.settings.fuzzySearch) {
-					let positions = this.fuzzyMatch(file.name, query);
-					if (positions) {
-						snippetFiles.push({
-							file: file,
-							positions: positions
-						});
-					}
-				} else {
-					if (file.name.toLowerCase().contains(query.toLowerCase())) {
-						snippetFiles.push({
-							file: file,
-							positions: []
-						})
-					}
+			if (this.plugin.settings.fuzzySearch) {
+				let positions = this.fuzzyMatch(file.name, query);
+				if (positions) {
+					snippetFiles.push({
+						file: file,
+						positions: positions
+					});
+				}
+			} else {
+				if (file.name.toLowerCase().contains(query.toLowerCase())) {
+					snippetFiles.push({
+						file: file,
+						positions: []
+					})
 				}
 			}
 		}
@@ -146,6 +142,9 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	}
 
 	private removeFrontmatter(content: string) {
+		if (!content) {
+			return "";
+		}
 		if (!this.plugin.settings.ignoreProperties) {
 			return content;
 		}
@@ -215,13 +214,11 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 		// show file content
 		if (this.plugin.settings.showFileContent) {
-			// const fileContent = await this.plugin.app.vault.cachedRead(suggestion.file);
 			el.createDiv({cls: "slash-file"})
 				.createEl("small", {cls: "slash-file-content", text: fileContent.trim()});
 		}
 
-		if (fileContent.contains("$textSelection")) {
-			;
+		if (this.plugin.selectedText && fileContent.contains("$textSelection")) {
 			const maxLength = 20;
 			let insertText = ""
 
@@ -231,7 +228,7 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 				insertText = this.plugin.selectedText.substring(0, 10).trim();
 			}
 
-			el.createEl('small', {text: insertText,cls: "insert_text"});
+			el.createEl('small', {text: insertText, cls: "insert_text"});
 		}
 
 
@@ -245,11 +242,13 @@ class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 export default class SlashSnippetPlugin extends Plugin {
 	settings: SlashSnippetSettings;
 	selectedText: string;
+	snippetFiles: TFile[] = [];
 
 	async onload() {
 		await this.loadSettings();
 		this.registerEditorSuggest(new SlashSuggestions(this));
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
+		this.listenForUpdates();
 
 		// keep text selection updated
 		const mySelectionListener = EditorView.updateListener.of((update: ViewUpdate) => {
@@ -267,6 +266,38 @@ export default class SlashSnippetPlugin extends Plugin {
 		this.registerEditorExtension(mySelectionListener);
 	}
 
+
+	// loadAllTemplatedFiles() {
+	// 	const files = this.app.vault.getMarkdownFiles();
+	// 	console.log(files.length);
+	// 	const snippets = []
+	//
+	// 	for (let i = 0; i < files.length; i++) {
+	// 		const file = files[i];
+	//
+	// 		if (file.path.startsWith(this.settings.snippetPath)) {
+	// 			snippets.push(file)
+	// 		}
+	// 	}
+	// 	return snippets;
+	//
+	// }
+
+	listenForUpdates() {
+		this.registerEvent(this.app.vault.on('create', (file) => {
+			if (file.path.startsWith(`${this.settings.snippetPath}/`)) {
+				console.log('on create', file.path);
+				this.snippetFiles.push(file as TFile);
+			}
+		}));
+
+		this.registerEvent(this.app.vault.on('delete', (file) => {
+			if (file.path.startsWith(`${this.settings.snippetPath}/`)) {
+				console.log('on delete', file.path);
+				this.snippetFiles.remove(file as TFile);
+			}
+		}));
+	}
 
 	public async runTemplaterReplace() {
 		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
