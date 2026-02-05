@@ -1,7 +1,8 @@
-import {Plugin, TFile, debounce,} from "obsidian";
+import {debounce, Plugin, TFile,} from "obsidian";
 import {EditorView, ViewUpdate} from "@codemirror/view";
 import SlashSnippetSettingTab from "./SlashSnippetSettingTab";
 import SlashSuggestions from "./SlashSuggestions";
+
 
 interface SlashSnippetSettings {
 	slashTrigger: string;
@@ -15,7 +16,7 @@ interface SlashSnippetSettings {
 }
 
 export interface SuggestionObject {
-	file: TFile;
+	filePath: string;
 	positions: number[];
 	score: number;
 }
@@ -44,6 +45,7 @@ export default class SlashSnippetPlugin extends Plugin {
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
 		this.loadAllTemplatedFiles();
 		this.listenForUpdates();
+		this.loadHistoryFromFile();
 
 		// keep text selection updated
 		const mySelectionListener = EditorView.updateListener.of((update: ViewUpdate) => {
@@ -103,6 +105,25 @@ export default class SlashSnippetPlugin extends Plugin {
 		}, 300, true)
 
 		delayTemplateReplaceRun()
+
+	}
+
+	async loadHistoryFromFile() {
+		const path = ".obsidian/plugins/slash-snippets/snippet-history.json";
+		const dummy = [
+			{path: "xoxo", score: 10}
+		]
+		await this.app.vault.adapter.write(path, JSON.stringify(dummy));
+		const history = await this.app.vault.adapter.read(path);
+
+	}
+
+	async getLocalHistory(){
+		const path = ".obsidian/plugins/slash-snippets/snippet-history.json";
+		return await this.app.vault.adapter.read(path);
+	}
+
+	async updateLocalSnippet(suggestionObjects: SuggestionObject[]) {
 
 	}
 

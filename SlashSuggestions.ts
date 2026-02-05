@@ -68,7 +68,7 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 				if (positions) {
 					snippetFiles.push({
-						file: file,
+						filePath: file.path,
 						positions: positions,
 						score: score
 					});
@@ -78,7 +78,7 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 				if (file.name.toLowerCase().contains(query.toLowerCase())) {
 					score = 1;
 					snippetFiles.push({
-						file: file,
+						filePath: file.path,
 						positions: [],
 						score: score
 					})
@@ -134,7 +134,9 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	}
 
 	public async selectSuggestion(result: SuggestionObject, evt: MouseEvent) {
-		const fileContent = await this.plugin.app.vault.cachedRead(result.file);
+		const file = this.plugin.app.vault.getFileByPath(result.filePath);
+		if (!file) return
+		const fileContent = await this.plugin.app.vault.cachedRead(file);
 		let snippetContent = this.removeFrontmatter(fileContent);
 		// replace with past text selection
 		if (this.plugin.selectedText) {
@@ -161,12 +163,12 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	updateLastUsedSnippet(snippet: SuggestionObject) {
 		// remove if already exist
 		this.plugin.lastSnippetFiles.map(lastSnippet => {
-			if (snippet.file.path === lastSnippet.file.path) {
+			if (snippet.filePath === lastSnippet.filePath) {
 				this.plugin.lastSnippetFiles.remove(lastSnippet);
 			}
 		})
 		// insert at top
-		this.plugin.lastSnippetFiles.push(snippet);
+		this.plugin.lastSnippetFiles.unshift(snippet);
 	}
 
 	buildHighlighted(text: string, positions: number[]) {
@@ -185,23 +187,24 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 
 	// Renders each suggestion item.
 	async renderSuggestion(suggestion: SuggestionObject, el: HTMLElement) {
-		const name = suggestion.file.basename;
-		const pos = suggestion.positions;
+		const file = this.plugin.app.vault.getFileByPath(suggestion.filePath);
+		if (!file) return
+		const fileContent = await this.plugin.app.vault.cachedRead(file);
 
-		const fileContent = await this.plugin.app.vault.cachedRead(suggestion.file);
+		const pos = suggestion.positions;
 
 		// highlight match
 		if (this.plugin.settings.highlight && pos) {
 			const title = el.createEl("div");
-			title.innerHTML = this.buildHighlighted(name, pos);
+			title.innerHTML = this.buildHighlighted(file.basename, pos);
 
 		} else {
-			el.createEl("div", {text: suggestion.file.basename});
+			el.createEl("div", {text: file.basename});
 		}
 
 		// show path
 		if (this.plugin.settings.showPath) {
-			el.createEl("small", {cls: "slash-path", text: suggestion.file.path});
+			el.createEl("small", {cls: "slash-path", text: suggestion.filePath});
 		}
 
 		// show file content
