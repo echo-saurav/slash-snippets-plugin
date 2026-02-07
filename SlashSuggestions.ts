@@ -147,6 +147,9 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		const fileContent = await this.plugin.app.vault.cachedRead(file);
 		let snippetContent = this.removeFrontmatter(fileContent);
 
+		const textSelectionPos = snippetContent.indexOf(this.plugin.settings.textSelectionString);
+		console.log(`textSelectionPos ${textSelectionPos}`);
+
 		// cursor position hop
 		const cursorTextPos = snippetContent.indexOf(this.plugin.settings.cursorPositionString);
 		// remove cursor text
@@ -168,10 +171,15 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			this.context.end
 		);
 
-		if (cursorTextPos) {
+		if (cursorTextPos && cursorTextPos >0) {
 			this.context?.editor.setCursor({
 				line: this.context?.start.line,
 				ch: this.context?.start.ch + cursorTextPos
+			});
+		}else if(textSelectionPos){
+			this.context?.editor.setCursor({
+				line: this.context?.start.line,
+				ch: this.context?.start.ch + textSelectionPos
 			});
 		}
 
