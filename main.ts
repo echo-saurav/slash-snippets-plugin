@@ -13,8 +13,8 @@ interface SlashSnippetSettings {
 	snippetPath: string;
 	ignoreProperties: boolean;
 	templaterSupport: boolean;
-	textSelectionString:string;
-	cursorPositionString:string;
+	textSelectionString: string;
+	cursorPositionString: string;
 	maxSelectedTextLength: number;
 	showSelectedText: boolean;
 }
@@ -29,8 +29,8 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	snippetPath: "Snippets",
 	ignoreProperties: true,
 	templaterSupport: true,
-	textSelectionString: "%% textSelection %%",
-	cursorPositionString: "%% cursor %%",
+	textSelectionString: "%%textSelection%%",
+	cursorPositionString: "%%cursor%%",
 	maxSelectedTextLength: 50,
 	showSelectedText: false
 };
@@ -56,15 +56,20 @@ export default class SlashSnippetPlugin extends Plugin {
 
 		// keep text selection updated
 		const mySelectionListener = EditorView.updateListener.of((update: ViewUpdate) => {
-			if (update.selectionSet) {
-				const text = update.state.sliceDoc(
-					update.state.selection.main.from,
-					update.state.selection.main.to
-				);
+			if (!update.docChanged) return;
 
-				if (text.length > 0) {
-					this.selectedText = text;
-				}
+			for (const tr of update.transactions) {
+				const changes = tr.changes;
+				changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
+					const deletedText = tr.startState.doc.sliceString(fromA, toA);
+					const insertedText = inserted.toString();
+
+					// update selected text
+					if (deletedText.length > 0 && insertedText === this.settings.slashTrigger) {
+						this.selectedText = deletedText;
+					}
+				})
+
 			}
 		});
 		this.registerEditorExtension(mySelectionListener);
