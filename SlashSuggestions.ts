@@ -146,42 +146,42 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		if (!file) return
 		const fileContent = await this.plugin.app.vault.cachedRead(file);
 		let snippetContent = this.removeFrontmatter(fileContent);
-		const cursorTextPos = snippetContent.indexOf("$cursorText");
+
+		// cursor position hop
+		const cursorTextPos = snippetContent.indexOf(this.plugin.settings.cursorPositionString);
+		// remove cursor text
+		if (cursorTextPos) {
+			snippetContent = snippetContent.replace(this.plugin.settings.cursorPositionString, "")
+		}
 
 		// replace with past text selection
 		if (this.plugin.selectedText) {
-			snippetContent = snippetContent.replace("$textSelection", this.plugin.selectedText);
+			snippetContent = snippetContent.replace(this.plugin.settings.textSelectionString, this.plugin.selectedText);
 		} else {
-			snippetContent = snippetContent.replace("$textSelection", "");
+			snippetContent = snippetContent.replace(this.plugin.settings.textSelectionString, "");
 		}
 		this.plugin.selectedText = "";
 		//
-
-
 		this.context?.editor.replaceRange(
 			snippetContent,
 			this.context.start,
 			this.context.end
 		);
 
-
-		console.log(cursorTextPos);
-		console.log(`start: ${this.context?.start}|end :${this.context?.end}`);
-
-
-		this.context?.editor.setCursor({
-			line: this.context?.start.line,
-			//ch: "$cursorText".length - this.context?.start.ch
-			ch: this.context?.start.ch + cursorTextPos
-		});
+		if (cursorTextPos) {
+			this.context?.editor.setCursor({
+				line: this.context?.start.line,
+				ch: this.context?.start.ch + cursorTextPos
+			});
+		}
 
 
+		// run templater
 		if (this.plugin.settings.templaterSupport) {
 			await this.plugin.runTemplaterReplace();
 		}
 
-
-		// update select timestamp
+		// update last used timestamp
 		localStorage.setItem(suggestion.filePath, String(Date.now()));
 		this.close();
 	}

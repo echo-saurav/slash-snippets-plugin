@@ -97,6 +97,33 @@ export default class SlashSnippetSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Text Selection")
+			.setDesc("Set a variable to replace text with last text selection")
+			.addText((text) =>
+				text
+					.setPlaceholder("%% textSelection %%")
+					.setValue(this.plugin.settings.textSelectionString)
+					.onChange(async (value) => {
+						this.plugin.settings.textSelectionString = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Cursor position")
+			.setDesc("Set a variable for where to put the cursor after snippet has inserted")
+			.addText((text) =>
+				text
+					.setPlaceholder("%% cursor %%")
+					.setValue(this.plugin.settings.cursorPositionString)
+					.onChange(async (value) => {
+						this.plugin.settings.cursorPositionString = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+
+		new Setting(containerEl)
 			.setName("Ignore properties")
 			.setDesc("Enable this if you don't want to insert properties values in the snippets notes")
 			.addToggle((enable) => {

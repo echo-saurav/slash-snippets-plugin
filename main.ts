@@ -27,8 +27,8 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	snippetPath: "Snippets",
 	ignoreProperties: true,
 	templaterSupport: true,
-	textSelectionString: "$textSelection$",
-	cursorPositionString: "$cursor$",
+	textSelectionString: "%% textSelection %%",
+	cursorPositionString: "%% cursor %%",
 };
 
 export interface SuggestionObject {
@@ -36,8 +36,6 @@ export interface SuggestionObject {
 	positions: number[];
 	score: number;
 }
-
-
 
 
 export default class SlashSnippetPlugin extends Plugin {
@@ -112,8 +110,6 @@ export default class SlashSnippetPlugin extends Plugin {
 			}
 		}));
 	}
-
-
 
 
 	public async runTemplaterReplace() {
