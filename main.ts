@@ -67,10 +67,8 @@ export default class SlashSnippetPlugin extends Plugin {
 					// update selected text
 					if (deletedText.length > 0 && insertedText === this.settings.slashTrigger) {
 						this.selectedText = deletedText;
-					} else {
-						this.selectedText = "";
 					}
-				})
+				});
 
 			}
 		});
