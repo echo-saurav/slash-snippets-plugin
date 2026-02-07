@@ -13,6 +13,8 @@ interface SlashSnippetSettings {
 	snippetPath: string;
 	ignoreProperties: boolean;
 	templaterSupport: boolean;
+	textSelectionString:string;
+	cursorPositionString:string;
 }
 
 
@@ -24,7 +26,9 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	showFileContent: false,
 	snippetPath: "Snippets",
 	ignoreProperties: true,
-	templaterSupport: true
+	templaterSupport: true,
+	textSelectionString: "$textSelection$",
+	cursorPositionString: "$cursor$",
 };
 
 export interface SuggestionObject {

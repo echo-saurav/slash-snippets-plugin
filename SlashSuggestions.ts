@@ -1,15 +1,17 @@
-import {Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile} from "obsidian";
+import {
+	Editor,
+	EditorPosition,
+	EditorSuggest,
+	EditorSuggestContext,
+	EditorSuggestTriggerInfo,
+	TFile
+} from "obsidian";
 import SlashSnippetPlugin, {SuggestionObject} from "./main";
 
 export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	private plugin: SlashSnippetPlugin;
 	private DEFAULT_SCORE = 1;
 	private START_WITH_SCORE = 2;
-
-	constructor(app: SlashSnippetPlugin) {
-		super(app.app);
-		this.plugin = app;
-	}
 
 
 	getAllSnippets(query: string) {
@@ -98,7 +100,6 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	}
 
 
-
 	getSuggestions(context: EditorSuggestContext): SuggestionObject[] | Promise<SuggestionObject[]> {
 		return this.getAllSnippets(context.query)
 	}
@@ -145,6 +146,8 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		if (!file) return
 		const fileContent = await this.plugin.app.vault.cachedRead(file);
 		let snippetContent = this.removeFrontmatter(fileContent);
+		const cursorTextPos = snippetContent.indexOf("$cursorText");
+
 		// replace with past text selection
 		if (this.plugin.selectedText) {
 			snippetContent = snippetContent.replace("$textSelection", this.plugin.selectedText);
@@ -152,6 +155,8 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			snippetContent = snippetContent.replace("$textSelection", "");
 		}
 		this.plugin.selectedText = "";
+		//
+
 
 		this.context?.editor.replaceRange(
 			snippetContent,
@@ -159,9 +164,22 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			this.context.end
 		);
 
+
+		console.log(cursorTextPos);
+		console.log(`start: ${this.context?.start}|end :${this.context?.end}`);
+
+
+		this.context?.editor.setCursor({
+			line: this.context?.start.line,
+			//ch: "$cursorText".length - this.context?.start.ch
+			ch: this.context?.start.ch + cursorTextPos
+		});
+
+
 		if (this.plugin.settings.templaterSupport) {
 			await this.plugin.runTemplaterReplace();
 		}
+
 
 		// update select timestamp
 		localStorage.setItem(suggestion.filePath, String(Date.now()));
@@ -239,9 +257,18 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			}
 
 			el.createEl('small', {text: insertText, cls: "insert_text"});
+
+
 		}
+
+	}
+
+	constructor(app: SlashSnippetPlugin) {
+		super(app.app);
+		this.plugin = app;
 	}
 
 	public unload(): void {
 	}
+
 }
