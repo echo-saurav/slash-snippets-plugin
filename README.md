@@ -53,12 +53,13 @@ Example
 
 **Colorful text**
 ```
-<span style='color:red;'>%%cursor%%</span> 
+<span style='background:red; color: white'>%%cursor%%</span> 
 ```
 Or this, if you want text selection
 ```
-<span style='color:red;'>%%cursor%%%%textSelection%%</span> 
+<span style='background:red; color: white'>%%cursor%%%%textSelection%%</span> 
 ```
+![image](./assets/color-text.png)
 
 
 **Callouts**
