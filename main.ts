@@ -15,11 +15,6 @@ interface SlashSnippetSettings {
 	templaterSupport: boolean;
 }
 
-export interface SuggestionObject {
-	filePath: string;
-	positions: number[];
-	score: number;
-}
 
 const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	slashTrigger: "/",
@@ -32,12 +27,19 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	templaterSupport: true
 };
 
+export interface SuggestionObject {
+	filePath: string;
+	positions: number[];
+	score: number;
+}
+
+
+
 
 export default class SlashSnippetPlugin extends Plugin {
 	settings: SlashSnippetSettings;
 	selectedText: string;
 	snippetFiles: TFile[] = [];
-	lastSnippetFiles: SuggestionObject[] = [];
 
 	async onload() {
 		await this.loadSettings();
@@ -45,7 +47,6 @@ export default class SlashSnippetPlugin extends Plugin {
 		this.addSettingTab(new SlashSnippetSettingTab(this.app, this));
 		this.loadAllTemplatedFiles();
 		this.listenForUpdates();
-		this.loadHistoryFromFile();
 
 		// keep text selection updated
 		const mySelectionListener = EditorView.updateListener.of((update: ViewUpdate) => {
@@ -71,7 +72,14 @@ export default class SlashSnippetPlugin extends Plugin {
 			const file = files[i];
 
 			if (file.path.startsWith(`${this.settings.snippetPath}/`)) {
-				snippets.push(file)
+				snippets.push(file);
+				//
+				const oldScore = localStorage.getItem(file.path);
+				if (!oldScore) {
+					// default score
+					const timestamp = Date.now();
+					localStorage.setItem(file.path, String(timestamp));
+				}
 			}
 		}
 
@@ -81,18 +89,28 @@ export default class SlashSnippetPlugin extends Plugin {
 	listenForUpdates() {
 		this.registerEvent(this.app.vault.on('create', (file) => {
 			if (file.path.startsWith(`${this.settings.snippetPath}/`)) {
-				console.log('on create', file.path);
 				this.snippetFiles.push(file as TFile);
+
+				const oldScore = localStorage.getItem(file.path);
+				if (!oldScore) {
+					// default score
+					const timestamp = Date.now();
+					localStorage.setItem(file.path, String(timestamp));
+				}
 			}
 		}));
 
 		this.registerEvent(this.app.vault.on('delete', (file) => {
 			if (file.path.startsWith(`${this.settings.snippetPath}/`)) {
-				console.log('on delete', file.path);
 				this.snippetFiles.remove(file as TFile);
+				// remove score
+				localStorage.removeItem(file.path);
 			}
 		}));
 	}
+
+
+
 
 	public async runTemplaterReplace() {
 		const templaterReplaceCommandId = "templater-obsidian:replace-in-file-templater";
@@ -105,25 +123,6 @@ export default class SlashSnippetPlugin extends Plugin {
 		}, 300, true)
 
 		delayTemplateReplaceRun()
-
-	}
-
-	async loadHistoryFromFile() {
-		const path = ".obsidian/plugins/slash-snippets/snippet-history.json";
-		const dummy = [
-			{path: "xoxo", score: 10}
-		]
-		await this.app.vault.adapter.write(path, JSON.stringify(dummy));
-		const history = await this.app.vault.adapter.read(path);
-
-	}
-
-	async getLocalHistory(){
-		const path = ".obsidian/plugins/slash-snippets/snippet-history.json";
-		return await this.app.vault.adapter.read(path);
-	}
-
-	async updateLocalSnippet(suggestionObjects: SuggestionObject[]) {
 
 	}
 

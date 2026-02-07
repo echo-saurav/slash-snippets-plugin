@@ -3,10 +3,66 @@ import SlashSnippetPlugin, {SuggestionObject} from "./main";
 
 export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 	private plugin: SlashSnippetPlugin;
+	private DEFAULT_SCORE = 1;
+	private START_WITH_SCORE = 2;
 
 	constructor(app: SlashSnippetPlugin) {
 		super(app.app);
 		this.plugin = app;
+	}
+
+
+	getAllSnippets(query: string) {
+		if (query.startsWith(" ")) {
+			return []
+		}
+
+		// if nothing is query yet
+		if (query == "") {
+			return this.getLastUsedSnippetFiles();
+
+		}
+
+		// search rank
+		const snippetFiles: SuggestionObject[] = [];
+
+		for (let i = 0; i < this.plugin.snippetFiles.length; i++) {
+			const file = this.plugin.snippetFiles[i];
+			let score = 0;
+
+			if (this.plugin.settings.fuzzySearch) {
+				let positions = this.fuzzyMatch(file.name, query);
+				// if fuzzy math start with query then have higher score match
+				if (file.name.startsWith(query)) {
+					score = this.START_WITH_SCORE;
+				} else {
+					score = this.DEFAULT_SCORE;
+				}
+
+				if (positions) {
+					snippetFiles.push({
+						filePath: file.path,
+						positions: positions,
+						score: score
+					});
+				}
+
+			} else {
+				if (file.name.toLowerCase().contains(query.toLowerCase())) {
+					score = this.DEFAULT_SCORE;
+					snippetFiles.push({
+						filePath: file.path,
+						positions: [],
+						score: score
+					})
+
+				}
+			}
+		}
+
+		snippetFiles.sort((a, b) => b.score - a.score);
+		return snippetFiles;
+
 	}
 
 	fuzzyMatch(text: string, query: string) {
@@ -41,56 +97,7 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		}
 	}
 
-	getAllSnippets(query: string) {
-		if (query.startsWith(" ")) {
-			return []
-		}
-		const snippetFiles: SuggestionObject[] = [];
 
-		// if nothing is query yet
-		if (query == "" && this.plugin.lastSnippetFiles.length > 0) {
-			return this.plugin.lastSnippetFiles;
-		}
-
-
-		for (let i = 0; i < this.plugin.snippetFiles.length; i++) {
-			const file = this.plugin.snippetFiles[i];
-			let score = 0;
-
-			if (this.plugin.settings.fuzzySearch) {
-				let positions = this.fuzzyMatch(file.name, query);
-				// if fuzzy math start with query then have higher score match
-				if (file.name.startsWith(query)) {
-					score = 5;
-				} else {
-					score = 1;
-				}
-
-				if (positions) {
-					snippetFiles.push({
-						filePath: file.path,
-						positions: positions,
-						score: score
-					});
-				}
-
-			} else {
-				if (file.name.toLowerCase().contains(query.toLowerCase())) {
-					score = 1;
-					snippetFiles.push({
-						filePath: file.path,
-						positions: [],
-						score: score
-					})
-
-				}
-			}
-		}
-
-		snippetFiles.sort((a, b) => b.score - a.score);
-		return snippetFiles;
-
-	}
 
 	getSuggestions(context: EditorSuggestContext): SuggestionObject[] | Promise<SuggestionObject[]> {
 		return this.getAllSnippets(context.query)
@@ -133,8 +140,8 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 		return content;
 	}
 
-	public async selectSuggestion(result: SuggestionObject, evt: MouseEvent) {
-		const file = this.plugin.app.vault.getFileByPath(result.filePath);
+	public async selectSuggestion(suggestion: SuggestionObject, evt: MouseEvent) {
+		const file = this.plugin.app.vault.getFileByPath(suggestion.filePath);
 		if (!file) return
 		const fileContent = await this.plugin.app.vault.cachedRead(file);
 		let snippetContent = this.removeFrontmatter(fileContent);
@@ -156,20 +163,28 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 			await this.plugin.runTemplaterReplace();
 		}
 
-		this.updateLastUsedSnippet(result);
+		// update select timestamp
+		localStorage.setItem(suggestion.filePath, String(Date.now()));
 		this.close();
 	}
 
-	updateLastUsedSnippet(snippet: SuggestionObject) {
-		// remove if already exist
-		this.plugin.lastSnippetFiles.map(lastSnippet => {
-			if (snippet.filePath === lastSnippet.filePath) {
-				this.plugin.lastSnippetFiles.remove(lastSnippet);
+	getLastUsedSnippetFiles(): SuggestionObject[] {
+		const snippets: SuggestionObject[] = [];
+
+		this.plugin.snippetFiles.map(snippet => {
+			const timestamp = localStorage.getItem(snippet.path);
+			const suggestionObject = {
+				filePath: snippet.path,
+				positions: [],
+				score: timestamp ? Number(timestamp) : 0,
 			}
-		})
-		// insert at top
-		this.plugin.lastSnippetFiles.unshift(snippet);
+			snippets.push(suggestionObject);
+		});
+
+		snippets.sort((a, b) => b.score - a.score);
+		return snippets;
 	}
+
 
 	buildHighlighted(text: string, positions: number[]) {
 		let out = "";
