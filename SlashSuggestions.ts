@@ -246,19 +246,19 @@ export default class SlashSuggestions extends EditorSuggest<SuggestionObject> {
 				.createEl("small", {cls: "slash-file-content", text: fileContent.trim()});
 		}
 
-		if (this.plugin.selectedText && fileContent.contains("$textSelection")) {
-			const maxLength = 20;
+		if (this.plugin.settings.showSelectedText &&
+			this.plugin.selectedText &&
+			fileContent.contains(this.plugin.settings.textSelectionString)) {
+
 			let insertText = ""
 
-			if (this.plugin.selectedText.length > maxLength) {
-				insertText = `${this.plugin.selectedText.substring(0, maxLength).trim()}...`;
+			if (this.plugin.selectedText.length > this.plugin.settings.maxSelectedTextLength) {
+				insertText = `${this.plugin.selectedText.substring(0, this.plugin.settings.maxSelectedTextLength).trim()}...`;
 			} else {
 				insertText = this.plugin.selectedText.substring(0, 10).trim();
 			}
 
 			el.createEl('small', {text: insertText, cls: "insert_text"});
-
-
 		}
 
 	}

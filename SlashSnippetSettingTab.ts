@@ -84,6 +84,19 @@ export default class SlashSnippetSettingTab extends PluginSettingTab {
 
 
 		new Setting(containerEl)
+			.setName("Show last selected text")
+			.addToggle((enable) => {
+				enable
+					.setValue(this.plugin.settings.showSelectedText)
+					.onChange(async (value) => {
+						this.plugin.settings.showSelectedText = value;
+						await this.plugin.saveSettings();
+					})
+			});
+
+
+
+		new Setting(containerEl)
 			.setName("Snippet path")
 			.setDesc("Set a folder that has all the snippets files")
 			.addText((text) =>

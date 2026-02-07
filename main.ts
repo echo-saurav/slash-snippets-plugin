@@ -15,6 +15,8 @@ interface SlashSnippetSettings {
 	templaterSupport: boolean;
 	textSelectionString:string;
 	cursorPositionString:string;
+	maxSelectedTextLength: number;
+	showSelectedText: boolean;
 }
 
 
@@ -29,6 +31,8 @@ const DEFAULT_SETTINGS: SlashSnippetSettings = {
 	templaterSupport: true,
 	textSelectionString: "%% textSelection %%",
 	cursorPositionString: "%% cursor %%",
+	maxSelectedTextLength: 50,
+	showSelectedText: false
 };
 
 export interface SuggestionObject {
