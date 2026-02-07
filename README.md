@@ -28,7 +28,38 @@ Currently its under review , you can install using [BRAT plugin](https://github.
 - Reload Obsidian
 - Enable the plugin in Settings -> Community Plugins
 
+## Text Variables 
+### cursor position 
+use `%%cursor%%` in the snippet file to have a predefined position after the snippet is inserted.
+
+Example:
+```
+<iframe src="%%cursor%%" height="400px" width="100%"></iframe>
+```
+
+### Text selection insert
+insert last selected text into snippet. 
+
+Example 
+```
+> [!faq]- %%textSelection%%
+> 
+```
+![gif](./assets/selected-text.gif)
+
+
+
 ## Here are some inspirations for snippets 
+
+**Colorful text**
+```
+<span style='color:red;'>%%cursor%%</span> 
+```
+Or this, if you want text selection
+```
+<span style='color:red;'>%%cursor%%%%textSelection%%</span> 
+```
+
 
 **Callouts**
 
